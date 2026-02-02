@@ -4,16 +4,15 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Post {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   title     String
   content   String
   category  String
-  createdAt DateTime @map("created_at")
-  updatedAt DateTime? @map("updated_at")
+  createdat DateTime  @db.Date
+  updatedat DateTime? @db.Date
 
   @@map("post")
 }

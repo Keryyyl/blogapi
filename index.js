@@ -1,73 +1,99 @@
 import express from 'express'
 import { PrismaClient } from '@prisma/client'
+
 const app = express()
 const prisma = new PrismaClient()
-app.use(express.json())
 const port = 3000
 
-// Get all posts
-app.post('/posts', async (req, res) => {
-  const post = await prisma.post.create({
-    data: {
-      title: req.body.title,
-      content: req.body.content
-    }
-  })
-  res.status(201).json(post)
-})
+app.use(express.json())
 
-// Get all posts with optional search term
+// GET all posts (optional search)
 app.get('/posts', async (req, res) => {
-  const searchTerm = req.query.searchTerm ?? ''
-  const posts = await prisma.post.findMany({
-    where: {
-      title: {
-        contains: searchTerm,
-        mode: 'insensitive'
+  try {
+    const searchTerm = req.query.searchTerm ?? ''
+
+    const posts = await prisma.post.findMany({
+      where: {
+        title: {
+          contains: searchTerm,
+          mode: 'insensitive'
+        }
       }
-    }
-})
-  res.json(posts)
+    })
+
+    res.json(posts)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
 })
 
-// Get a single post by ID
+// GET post by ID
 app.get('/posts/:id', async (req, res) => {
-  const post = await prisma.post.findUnique({
-    where: { id: Number(req.params.id) }
-  })
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: Number(req.params.id) }
+    })
 
-  res.json(post)
-})
-
-// Create a new post
-app.post('/posts', async (req, res) => {
-  const post = await prisma.post.create({
-    data: {
-      title: req.body.title,
-      content: req.body.content
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' })
     }
-  })
-  res.status(201).json(post)
+
+    res.json(post)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
 })
 
-// Update a post by ID
+// CREATE post
+app.post('/posts', async (req, res) => {
+  try {
+    const { title, content, category } = req.body
+
+    const post = await prisma.post.create({
+      data: {
+        title,
+        content,
+        category,
+        createdAt: new Date()
+      }
+    })
+
+    res.status(201).json(post)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// UPDATE post
 app.put('/posts/:id', async (req, res) => {
-  const post = await prisma.post.update({
-    where: { id: Number(req.params.id) },
-    data: req.body
-  })
-  res.json(post)
+  try {
+    const post = await prisma.post.update({
+      where: { id: Number(req.params.id) },
+      data: {
+        ...req.body,
+        updatedAt: new Date()
+      }
+    })
+
+    res.json(post)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
 })
 
-// Delete a post by ID
+// DELETE post
 app.delete('/posts/:id', async (req, res) => {
-  await prisma.post.delete({
-    where: { id: Number(req.params.id) }
-  })
-  res.send('Post deleted')
-})
+  try {
+    await prisma.post.delete({
+      where: { id: Number(req.params.id) }
+    })
 
+    res.send('Post deleted')
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+  console.log(`🚀 Server running on http://localhost:${port}`)
 })

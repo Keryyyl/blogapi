@@ -5,30 +5,66 @@ const prisma = new PrismaClient()
 app.use(express.json())
 const port = 3000
 
-app.get('/posts', (req, res) => {
-  res.send('Hello World!')
+// Get all posts
+app.post('/posts', async (req, res) => {
+  const post = await prisma.post.create({
+    data: {
+      title: req.body.title,
+      content: req.body.content
+    }
+  })
+  res.status(201).json(post)
 })
-app.get('/posts', (req, res) => {
-    const searchTerm = req.query.searchTerm ?? '';
-    res.send('id: ' + req.query.searchTerm);
-});
 
+// Get all posts with optional search term
+app.get('/posts', async (req, res) => {
+  const searchTerm = req.query.searchTerm ?? ''
+  const posts = await prisma.post.findMany({
+    where: {
+      title: {
+        contains: searchTerm,
+        mode: 'insensitive'
+      }
+    }
+})
+  res.json(posts)
+})
+
+// Get a single post by ID
 app.get('/posts/:id', async (req, res) => {
-    const post = await prisma.post.findUnique({
-        where: { id: Number(req.params.id) },
-    });
-    res.json(post);
+  const post = await prisma.post.findUnique({
+    where: { id: Number(req.params.id) }
+  })
+
+  res.json(post)
 })
-app.post('/posts', (req, res) => {
-    res.send('A new post has been created')
+
+// Create a new post
+app.post('/posts', async (req, res) => {
+  const post = await prisma.post.create({
+    data: {
+      title: req.body.title,
+      content: req.body.content
+    }
+  })
+  res.status(201).json(post)
 })
-app.put('/posts/:id', (req, res) => {
-    const postId = req.params.id
-    res.send(`Post with id ${postId} has been updated`)
+
+// Update a post by ID
+app.put('/posts/:id', async (req, res) => {
+  const post = await prisma.post.update({
+    where: { id: Number(req.params.id) },
+    data: req.body
+  })
+  res.json(post)
 })
-app.delete('/posts/:id', (req, res) => {
-    const postId = req.params.id
-    res.send(`Post with id ${postId} has been deleted`)
+
+// Delete a post by ID
+app.delete('/posts/:id', async (req, res) => {
+  await prisma.post.delete({
+    where: { id: Number(req.params.id) }
+  })
+  res.send('Post deleted')
 })
 
 

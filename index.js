@@ -1,9 +1,19 @@
+import 'dotenv/config'
 import express from 'express'
 import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import pg from 'pg'
 
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+})
+
+const adapter = new PrismaPg(pool)
+const prisma = new PrismaClient({ adapter })
 const app = express()
-const prisma = new PrismaClient()
 const port = 3000
+
+
 
 app.use(express.json())
 
@@ -11,16 +21,14 @@ app.use(express.json())
 app.get('/posts', async (req, res) => {
   try {
     const searchTerm = req.query.searchTerm ?? ''
-
     const posts = await prisma.post.findMany({
-      where: {
-        title: {
-          contains: searchTerm,
-          mode: 'insensitive'
+        where: {
+            title: {
+                contains: String(searchTerm),
+                mode: 'insensitive'
+            }
         }
-      }
     })
-
     res.json(posts)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -54,7 +62,7 @@ app.post('/posts', async (req, res) => {
         title,
         content,
         category,
-        createdAt: new Date()
+        createdat: new Date()
       }
     })
 
@@ -71,7 +79,7 @@ app.put('/posts/:id', async (req, res) => {
       where: { id: Number(req.params.id) },
       data: {
         ...req.body,
-        updatedAt: new Date()
+        updatedat: new Date()
       }
     })
 
